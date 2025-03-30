@@ -14,6 +14,8 @@ client = MongoClient('Enter your Atlas cluster connection string here')
 warnings = [] # list of ingredients we need to warn about, maybe timestamps for reminders
 warningTimeStamps = {} # possibly store previous order times as dict, Ingred: Time
 
+# whenever its a new day carry this out probably useMemo with date or sth to avoid rerunning
+# store previous day vs current time? d
 def dailyWarningCheck():
     warnings = [] # reset from old ingredient warnings
     # gather data each time
@@ -29,7 +31,7 @@ def dailyWarningCheck():
     orderDate = col[-1]
     daysOrderLasts = weeklyOrder/avgDailyUsage
     # check 1) 5 days since last order 2) 
-    if (datetime.date.today() > orderDate+5 or datetime.date.today() > orderDate+daysOrderLasts):
+    if (datetime.date.today() > orderDate + 5 or datetime.date.today() > orderDate + daysOrderLasts):
         warnings.append(col[1]) # grab ingredient name
         warningTimeStamps[col[1]] = datetime.date.today()
 
