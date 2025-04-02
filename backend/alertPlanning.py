@@ -1,14 +1,12 @@
 import pandas as pd
-import datetime
-import pymongo 
-import pymongoarrow 
+from datetime import datetime
+from datetime import date
+#import pymongo 
+#import pymongoarrow 
 from pymongo import MongoClient
 
-client = MongoClient('Enter your Atlas cluster connection string here')
+client = MongoClient('mongodb+srv://cfg1951sp25:DSGFyLjehdqB5hle@1951-cluster.nuzzx.mongodb.net/?retryWrites=true&w=majority&appName=1951-cluster')
 #https://www.geeksforgeeks.org/pymongoarrow-export-and-import-mongodb-data-to-pandas-dataframe-and-numpy/
-# db = client.test_database
-# col = db.test_collection
-# df = col.find_pandas_all()
 
 # warning alerts
 warnings = [] # list of ingredients we need to warn about, maybe timestamps for reminders
@@ -19,29 +17,46 @@ warningTimeStamps = {} # possibly store previous order times as dict, Ingred: Ti
 def dailyWarningCheck():
     warnings = [] # reset from old ingredient warnings
     # gather data each time
-    db = client.test_database
-    col = db.test_collection
-    df = col.find_pandas_all()
-    # maybe store timestamps for 
-    warningTimeStamps = {}
-    # handling school or break times? boolean input for avg?
-    schoolOrBreak = col[5] # maybe but idk
-    prevWeeklyOrder = col[-1].order
-    avgDailyUsage = df.iloc[1].mean()/7 # need to track days since the order... just day 5 ig
-    orderDate = col[-1]
-    daysOrderLasts = weeklyOrder/avgDailyUsage
-    # check 1) 5 days since last order 2) 
-    if (datetime.date.today() > orderDate + 5 or datetime.date.today() > orderDate + daysOrderLasts):
-        warnings.append(col[1]) # grab ingredient name
-        warningTimeStamps[col[1]] = datetime.date.today()
+    db = client['1951Data']
+    inventory_col = list(db.inventory.find())
+    print('got here')
+    # # maybe store timestamps for 
+    # warningTimeStamps = {}
+    # # handling school or break times? boolean input for avg?
+    # schoolOrBreak = inventory_col[5] # maybe but idk
+        # prevWeeklyOrder = inventory_col[-1].order
+        # avgDailyUsage = df.iloc[1].mean()/7 # need to track days since the order... just day 5 ig
+        # orderDate = inventory_col[-1]
+        # daysOrderLasts = prevWeeklyOrder#/avgDailyUsage
+        # check 1) 5 days since last order 2) 
+    for item in inventory_col:
+        print('got here')
+        currItemString = f"{item['ingredient']} {item['category']}"
+        field_names = list(item.keys())
+        target_fields = field_names[4:]
+        usageHistory = [item[tf] for tf in target_fields]
+        avgUsage = sum(usageHistory)/len(usageHistory)
+        mostRecentOrderDate = field_names[-1]
+        #actualDate = datetime.strptime(mostRecentOrderDate, "%m%d%Y")
+        #currTime = datetime.today()
+        currTimeVsOrderDate = datetime.today() - datetime.strptime(mostRecentOrderDate, "%m%d%Y")
+            # for reference: print(datetime.strptime("02282025", "%m%d%Y")) # gives 2025-02-28
+        #if (datetime.date.today() > orderDate + 5 or datetime.date.today() > orderDate + daysOrderLasts):
+        if (item[mostRecentOrderDate] < 0.3*avgUsage or currTimeVsOrderDate.days >= 5):
+            warnings.append([currItemString, currTimeVsOrderDate]) # grab ingredient name
+            warningTimeStamps[item[currItemString]] = datetime.date.today()
+        prepareWarnings()
+        # now to display all the warnings now in warnings bc of prepWarnings...
+    print(warnings)
 
-def displayWarning(warningString):
-    # take in warnings and upgrade each entry to string
+dailyWarningCheck()
+
+def prepareWarnings():
+    # take in warnings and upgrade each entry to final string
     for x in warnings:
-        currIngredient = warnings.remove(x)
+        currWarning = warnings.remove(x)
         # use f string to format the warning string   
-        warnings.append(f"Reminder to order {currIngredient} since it's been {ingredientData[currIngredient]} weeks!")
-    # sends to frontend
+        warnings.append(f"Reminder to order {currWarning[0]} since it's been {currWarning[1].days} days!")
 
 # below is likely unnecessary unless it keeps spamming warning after closing --> get msg to remove from array
 # def resolveWarning(warningString):
