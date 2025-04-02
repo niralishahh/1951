@@ -1,25 +1,24 @@
-import logo from './logo.svg';
+import React, { useState } from "react";
+import RecipesMain from "./RecipesMain"; 
 import './App.css';
 
 function App() {
+  const [showRecipesMain, setShowRecipesMain] = useState(false);
+
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+        {!showRecipesMain ? (
+          <button onClick={() => setShowRecipesMain(true)} className="App-button">
+            Open Recipe Manager
+          </button>
+        ) : (
+          <RecipesMain onClose={() => setShowRecipesMain(false)} />
+        )}
       </header>
     </div>
   );
 }
 
 export default App;
+
