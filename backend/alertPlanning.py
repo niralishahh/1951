@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 
 app = Flask(__name__)
 
-load_dotenv("backend/mongo.env")
+load_dotenv()
 CONNECTION_STRING = os.getenv("CONNECTION_STRING")
 
 client = MongoClient(CONNECTION_STRING, 
