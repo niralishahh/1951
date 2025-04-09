@@ -4,8 +4,15 @@ from datetime import date
 #import pymongo 
 #import pymongoarrow 
 from pymongo import MongoClient
+import ssl
+import certifi
 
-client = MongoClient('mongodb+srv://cfg1951sp25:DSGFyLjehdqB5hle@1951-cluster.nuzzx.mongodb.net/?retryWrites=true&w=majority&appName=1951-cluster')
+client = MongoClient('mongodb+srv://cfg1951sp25:DSGFyLjehdqB5hle@1951-cluster.nuzzx.mongodb.net/?retryWrites=true&w=majority&appName=1951-cluster', ssl=True,
+    tlsCAFile=certifi.where(),
+        connectTimeoutMS=30000,
+        serverSelectionTimeoutMS=30000,
+        tls = True, tlsAllowInvalidCertificates=True
+        )
 #https://www.geeksforgeeks.org/pymongoarrow-export-and-import-mongodb-data-to-pandas-dataframe-and-numpy/
 
 # warning alerts
@@ -18,8 +25,9 @@ def dailyWarningCheck():
     warnings = [] # reset from old ingredient warnings
     # gather data each time
     db = client['1951Data']
+    print(db.list_collection_names())
     inventory_col = list(db.inventory.find())
-    print('got here')
+    #print('got here')
     # # maybe store timestamps for 
     # warningTimeStamps = {}
     # # handling school or break times? boolean input for avg?
@@ -30,19 +38,21 @@ def dailyWarningCheck():
         # daysOrderLasts = prevWeeklyOrder#/avgDailyUsage
         # check 1) 5 days since last order 2) 
     for item in inventory_col:
-        print('got here')
+        #print('got here')
         currItemString = f"{item['ingredient']} {item['category']}"
         field_names = list(item.keys())
         target_fields = field_names[4:]
-        usageHistory = [item[tf] for tf in target_fields]
-        avgUsage = sum(usageHistory)/len(usageHistory)
+        # order history?
+        orderHistory = [item[tf] for tf in target_fields]
+        avgOrder = sum(orderHistory)/len(orderHistory)
         mostRecentOrderDate = field_names[-1]
         #actualDate = datetime.strptime(mostRecentOrderDate, "%m%d%Y")
         #currTime = datetime.today()
-        currTimeVsOrderDate = datetime.today() - datetime.strptime(mostRecentOrderDate, "%m%d%Y")
+        daysOrderLasts = item[field_names[-1]]/avgOrder * 7 # compare current order to average since average should last 7 days
+        currTimeVsOrderDate = (datetime.today() - datetime.strptime(mostRecentOrderDate, "%m%d%Y")).days
             # for reference: print(datetime.strptime("02282025", "%m%d%Y")) # gives 2025-02-28
         #if (datetime.date.today() > orderDate + 5 or datetime.date.today() > orderDate + daysOrderLasts):
-        if (item[mostRecentOrderDate] < 0.3*avgUsage or currTimeVsOrderDate.days >= 5):
+        if (currTimeVsOrderDate > daysOrderLasts or currTimeVsOrderDate >= 5):
             warnings.append([currItemString, currTimeVsOrderDate]) # grab ingredient name
             warningTimeStamps[item[currItemString]] = datetime.date.today()
         prepareWarnings()
@@ -56,7 +66,7 @@ def prepareWarnings():
     for x in warnings:
         currWarning = warnings.remove(x)
         # use f string to format the warning string   
-        warnings.append(f"Reminder to order {currWarning[0]} since it's been {currWarning[1].days} days!")
+        warnings.append(f"Reminder to order {currWarning[0]} since it's been {currWarning[1]} days!")
 
 # below is likely unnecessary unless it keeps spamming warning after closing --> get msg to remove from array
 # def resolveWarning(warningString):
