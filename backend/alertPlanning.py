@@ -1,3 +1,4 @@
+from flask import Flask, jsonify, request
 import pandas as pd
 from datetime import datetime
 from datetime import date
@@ -6,18 +7,22 @@ from datetime import date
 from pymongo import MongoClient
 import ssl
 import certifi
+import os
+from dotenv import load_dotenv
 
-client = MongoClient('mongodb+srv://cfg1951sp25:DSGFyLjehdqB5hle@1951-cluster.nuzzx.mongodb.net/?retryWrites=true&w=majority&appName=1951-cluster', ssl=True,
-    tlsCAFile=certifi.where(),
-        connectTimeoutMS=30000,
-        serverSelectionTimeoutMS=30000,
-        tls = True, tlsAllowInvalidCertificates=True
-        )
+app = Flask(__name__)
+
+load_dotenv("backend/mongo.env")
+CONNECTION_STRING = os.getenv("CONNECTION_STRING")
+
+client = MongoClient(CONNECTION_STRING, 
+                     ssl=True,tlsCAFile=certifi.where(), tls = True, tlsAllowInvalidCertificates=True)
 #https://www.geeksforgeeks.org/pymongoarrow-export-and-import-mongodb-data-to-pandas-dataframe-and-numpy/
-
-# warning alerts
 warnings = [] # list of ingredients we need to warn about, maybe timestamps for reminders
 warningTimeStamps = {} # possibly store previous order times as dict, Ingred: Time
+
+# db = client['1951Data']
+# print(db.list_collection_names())
 
 # whenever its a new day carry this out probably useMemo with date or sth to avoid rerunning
 # store previous day vs current time? d
@@ -25,7 +30,6 @@ def dailyWarningCheck():
     warnings = [] # reset from old ingredient warnings
     # gather data each time
     db = client['1951Data']
-    print(db.list_collection_names())
     inventory_col = list(db.inventory.find())
     #print('got here')
     # # maybe store timestamps for 
@@ -48,25 +52,17 @@ def dailyWarningCheck():
         mostRecentOrderDate = field_names[-1]
         #actualDate = datetime.strptime(mostRecentOrderDate, "%m%d%Y")
         #currTime = datetime.today()
-        daysOrderLasts = item[field_names[-1]]/avgOrder * 7 # compare current order to average since average should last 7 days
+        daysOrderLasts = 0
+        if avgOrder > 0:
+            daysOrderLasts = item[field_names[-1]]/avgOrder * 7 # compare current order to average since average should last 7 days
         currTimeVsOrderDate = (datetime.today() - datetime.strptime(mostRecentOrderDate, "%m%d%Y")).days
             # for reference: print(datetime.strptime("02282025", "%m%d%Y")) # gives 2025-02-28
         #if (datetime.date.today() > orderDate + 5 or datetime.date.today() > orderDate + daysOrderLasts):
         if (currTimeVsOrderDate > daysOrderLasts or currTimeVsOrderDate >= 5):
-            warnings.append([currItemString, currTimeVsOrderDate]) # grab ingredient name
-            warningTimeStamps[item[currItemString]] = datetime.date.today()
-        prepareWarnings()
-        # now to display all the warnings now in warnings bc of prepWarnings...
+            warnings.append(f"Reminder to order {currItemString} since it's been {currTimeVsOrderDate} days!")
     print(warnings)
 
 dailyWarningCheck()
-
-def prepareWarnings():
-    # take in warnings and upgrade each entry to final string
-    for x in warnings:
-        currWarning = warnings.remove(x)
-        # use f string to format the warning string   
-        warnings.append(f"Reminder to order {currWarning[0]} since it's been {currWarning[1]} days!")
 
 # below is likely unnecessary unless it keeps spamming warning after closing --> get msg to remove from array
 # def resolveWarning(warningString):
