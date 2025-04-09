@@ -2,8 +2,6 @@ from flask import Flask, jsonify, request
 import pandas as pd
 from datetime import datetime
 from datetime import date
-#import pymongo 
-#import pymongoarrow 
 from pymongo import MongoClient
 import ssl
 import certifi
