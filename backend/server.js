@@ -1,61 +1,42 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
+const { MongoClient, ObjectId } = require('mongodb');
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const uri = "mongodb+srv://cfg1951sp25:DSGFyLjehdqB5hle@1951-cluster.nuzzx.mongodb.net/?retryWrites=true&w=majority&appName=1951-cluster"
 
-mongoose.connect('mongodb://localhost:27017/recipeDatabase', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('Connected to MongoDB'))
-.catch(err => console.error('Could not connect to MongoDB', err));
+const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
 
-const PORT = process.env.PORT || 5000; 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-const Recipe = require('./models/Recipe'); //check path
-
-// fetch recipes
-app.get('/recipes', async (req, res) => {
+//recipe id given --> returns specific recipe, else all returned
+async function getRecipes(recipeId) {
   try {
-    const recipes = await Recipe.find();
-    res.json(recipes);
-  } catch (error) {
-    res.status(500).send('Server error');
-  }
-});
+    
+    await client.connect();
 
-// recipe by id
-app.get('/recipes/:id', async (req, res) => {
-  try {
-    const recipe = await Recipe.findById(req.params.id);
-    if (!recipe) {
-      return res.status(404).send('Recipe not found');
+    const database = client.db("1951Data"); 
+    const recipes = database.collection("recipes"); 
+
+    let result;
+    if (recipeId) {
+    
+      result = await recipes.findOne({ _id: new ObjectId(recipeId) });
+    } else {
+      result = await recipes.find({}).toArray();
     }
-    res.json(recipe);
+    return result;
   } catch (error) {
-    res.status(500).send('Server error');
+    console.error("Error retrieving recipes:", error);
+    throw error;
+  } finally {
+    await client.close();
   }
-});
+}
 
-//update recipe
-app.put('/recipes/:id', async (req, res) => {
+// Example usage:
+(async () => {
   try {
-    const updatedRecipe = await Recipe.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true } 
-    );
-    if (!updatedRecipe) {
-      return res.status(404).send('Recipe not found');
-    }
-    res.json(updatedRecipe);
+    // specific recipe
+    const recipeId = "67f5cfbb240909d84d0353df";
+    const specificRecipe = await getRecipes(recipeId);
+    console.log("Recipe with ID:", specificRecipe);
   } catch (error) {
-    res.status(500).send('Server error');
+    console.error("An error occurred:", error);
   }
-});
+})();
