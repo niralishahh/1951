@@ -29,9 +29,7 @@ def initialize_app():
     #define collections
     ingredientsCollection = db['ingredients']
     recipesCollection = db['recipes']
-    pricesCollection = db['prices']
     inventoryCollection = db['inventory']
-    orderCollection = db['order']
     
     from.routes import initialize_routes
     
