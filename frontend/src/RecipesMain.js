@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import AddNewRecipe from "./AddNewRecipe";
 import "./App.css"; 
 import logo1951 from "./logo1951.png";
-import plusiconinverted from "./plusiconinverted.png"; // Import the inverted plus icon
+import plusiconinverted from "./plusiconinverted.png"; 
 
 const HomePage = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -11,19 +11,18 @@ const HomePage = () => {
 
   const tabs = ["Hot Drinks", "Iced Drinks"];
 
-  // Fetch recipes from the API
+  //Fetch recipes from the API
   useEffect(() => {
     const fetchRecipes = async () => {
       const response = await fetch(`http://127.0.0.1:5000/api/recipes?tags=${encodeURIComponent(activeTab)}`);
       const data = await response.json();
-      console.log("Fetched recipes:", data); // Debugging line to verify the data
-      setRecipes(data); // Update the state with the fetched recipes
+      console.log("Fetched recipes:", data); 
+      setRecipes(data); 
     };
 
     fetchRecipes();
   }, [activeTab]);
 
-  // Filter recipes by active tab
   const filteredRecipes = recipes.filter(
     (recipe) => recipe.tags === activeTab
   );
@@ -65,7 +64,7 @@ const HomePage = () => {
           {filteredRecipes.length > 0 ? (
             filteredRecipes.map((recipe) => (
               <div key={recipe._id} className="recipe-card">
-                <h3 className="recipe-title">{recipe.title}</h3> {/* Displaying only the title */}
+                <h3 className="recipe-title">{recipe.title}</h3> {}
                 
                 <div className="recipe-ingredients">
                   {recipe.ingredients && recipe.ingredients.length > 0 ? (

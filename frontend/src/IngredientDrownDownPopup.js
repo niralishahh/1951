@@ -37,13 +37,11 @@ const AddIngredientPopup = ({ visible, onSave, onClose, recipeTitle, currentIngr
       category,
       type,
       quantity,
-      unit: categoryToUnit[category], // Get unit from the hardcoded category-to-unit map
+      unit: categoryToUnit[category], 
     };
 
-    // Add the new ingredient to the current list of ingredients
-    const updatedIngredients = [...currentIngredients, newIngredient];
-    onSave(newIngredient); // Pass the updated list back to the parent component
 
+    onSave(newIngredient); 
     setCategory("");
     setType("");
     setQuantity("");

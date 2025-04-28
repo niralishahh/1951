@@ -126,7 +126,7 @@ body, html {
 .card-container {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;  /* Adjusting the gap between cards */
+  gap: 10px;  
   margin-top: 20px;
   justify-content: space-between;
 }
@@ -136,8 +136,8 @@ body, html {
   border: 1px solid #eee;
   border-radius: 10px;
   padding: 20px;
-  width: calc(20% - 8px);  /* Each card is 20% of the width, minus the gap */
-  box-sizing: border-box; /* Ensures padding is included in the width */
+  width: calc(20% - 8px);  
+  box-sizing: border-box; 
   box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
   display: flex;
   flex-direction: column;
@@ -147,7 +147,7 @@ body, html {
 .recipe-title {
   font-family: "Futura", sans-serif;
   font-weight: regular;
-  font-size: 21px; /* Reduced font size for a better fit */
+  font-size: 21px; 
   margin-bottom: 10px;
 }
 

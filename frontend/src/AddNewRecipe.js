@@ -25,10 +25,10 @@ const AddNewRecipe = ({ visible, onClose }) => {
       "Ingredients": "grams",
       "Syrups": "grams",
       "Bottled Drinks": "bottle",
-      "Other": "units", // Assuming this is for fresh fruit
+      "Other": "units", 
     };
 
-    // Mapping selected label values to full names
+
     const labelMapping = {
       "hot": "Hot Drinks",
       "iced": "Iced Drinks",
@@ -70,11 +70,10 @@ const AddNewRecipe = ({ visible, onClose }) => {
   };
 
   const handleClose = () => {
-    // Clear all state when closing
     setRecipeTitle("");
     setIngredients([]);
     setSelectedLabel("");
-    onClose(false);  // Close and reset
+    onClose(false);  //close and reset
   };
 
   if (!visible) return null;
@@ -179,8 +178,8 @@ const editableTitleStyles = {
   textAlign: "left",
   minHeight: "30px",
   outline: "none",
-  border: "none", //no border
-  borderBottom: "2px solid black", //only bottom border
+  border: "none", 
+  borderBottom: "2px solid black", 
   padding: "5px 0",
   fontWeight: "bold",
   fontFamily: "Futura, sans-serif",
