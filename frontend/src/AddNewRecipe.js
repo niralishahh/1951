@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from "react";
 import AddIngredientPopup from "./IngredientDrownDownPopup";
 import plusicon from './plusicon.png';
 
@@ -6,20 +6,75 @@ const AddNewRecipe = ({ visible, onClose }) => {
   const [recipeTitle, setRecipeTitle] = useState("");
   const [showIngredientPopup, setShowIngredientPopup] = useState(false);
   const [ingredients, setIngredients] = useState([]);
-  const [isHovered, setIsHovered] = useState(false);
+  const [selectedLabel, setSelectedLabel] = useState("");
 
   const handleAddIngredient = (newIngredient) => {
-    setIngredients([...ingredients, newIngredient]); 
+    setIngredients([...ingredients, newIngredient]);
     setShowIngredientPopup(false);
   };
 
-  const handleFinish = () => {
-    console.log("Recipe Saved:", recipeTitle, ingredients);
-    onClose();
+  const handleFinish = async () => {
+    if (!recipeTitle || ingredients.length === 0 || !selectedLabel) {
+      alert("Please enter a recipe title, add at least one ingredient, and select a label.");
+      return;
+    }
+
+    // Map for category to unit
+    const categoryToUnit = {
+      "Liquids": "oz",
+      "Ingredients": "grams",
+      "Syrups": "grams",
+      "Bottled Drinks": "bottle",
+      "Other": "units", // Assuming this is for fresh fruit
+    };
+
+    // Mapping selected label values to full names
+    const labelMapping = {
+      "hot": "Hot Drinks",
+      "iced": "Iced Drinks",
+    };
+
+    const recipeData = {
+      title: recipeTitle,
+      ingredients: ingredients.map((ingredient) => ({
+        category: ingredient.category,
+        type: ingredient.type,
+        quantity: `${ingredient.quantity} ${categoryToUnit[ingredient.category] || ''}`, 
+      })),
+      tags: labelMapping[selectedLabel] || "", 
+    };
+
+    try {
+      const response = await fetch("http://127.0.0.1:5000/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(recipeData),
+      });
+
+      if (response.ok) {
+        console.log("Saved Recipe:", recipeData);
+        setRecipeTitle("");
+        setIngredients([]);
+        setSelectedLabel("");  // Reset the label
+        onClose(true);  // Pass true to reset the form and close
+      } else {
+        console.error("Failed to save recipe");
+      }
+    } catch (error) {
+      console.error("Error saving recipe:", error);
+    }
   };
 
   const handleTitleChange = (e) => {
     setRecipeTitle(e.target.value);
+  };
+
+  const handleClose = () => {
+    // Clear all state when closing
+    setRecipeTitle("");
+    setIngredients([]);
+    setSelectedLabel("");
+    onClose(false);  // Close and reset
   };
 
   if (!visible) return null;
@@ -27,7 +82,7 @@ const AddNewRecipe = ({ visible, onClose }) => {
   return (
     <div style={popupOverlayStyles}>
       <div style={popupStyles}>
-        <button style={closeButtonStyles} onClick={onClose}>&times;</button>
+        <button style={closeButtonStyles} onClick={handleClose}>&times;</button>
 
         <input
           type="text"
@@ -38,10 +93,33 @@ const AddNewRecipe = ({ visible, onClose }) => {
         />
 
         <div style={{ color: "gray", fontSize: "16px", fontFamily: "Futura", marginTop: "10px", textAlign: "left" }}>
-          {ingredients.map((ingredient, index) => 
-            `${ingredient.quantity} ${ingredient.unit} ${ingredient.type.toLowerCase()} ${ingredient.category.toLowerCase()}`
-          ).join(", ")}
+          {ingredients && ingredients.length > 0 ? (
+            ingredients.map((ingredient, index) => (
+              <span key={index}>
+                {ingredient.quantity} {ingredient.unit} {
+                  (ingredient.category.toLowerCase() !== 'syrups' && ingredient.category.toLowerCase() !== 'bottled drinks') 
+                  ? ingredient.type.toLowerCase() 
+                  : ingredient.type
+                }
+                {ingredient.category.toLowerCase() === 'syrups' && ' syrup'}
+                {index < ingredients.length - 1 && ", "}
+              </span>
+            ))
+          ) : (
+            <span>No ingredients added yet</span>
+          )}
         </div>
+
+        <label style={labelStyles}></label>
+        <select
+          value={selectedLabel}
+          onChange={(e) => setSelectedLabel(e.target.value)}
+          style={clearDropdownStyles}
+        >
+          <option value="">Select Label</option>
+          <option value="hot">Hot Drinks</option>
+          <option value="iced">Iced Drinks</option>
+        </select>
 
         <button style={dropdownStyles} onClick={() => setShowIngredientPopup(true)}>
           <img src={plusicon} alt="add icon" style={iconStyles} /> Add Ingredient
@@ -56,28 +134,10 @@ const AddNewRecipe = ({ visible, onClose }) => {
         visible={showIngredientPopup} 
         onSave={handleAddIngredient} 
         onClose={() => setShowIngredientPopup(false)}
-        fetchIngredients={fetchIngredients}
-        fetchTitle={fetchTitle}
-        recipeTitle={recipeTitle} //Pass recipeTitle as prop here** for ingredientdrowndownpopup
+        currentIngredients={ingredients}
       />
     </div>
   );
-};
-
-const fetchIngredients = async () => {
-  return new Promise((resolve) => {
-      setTimeout(() => {
-          resolve(["Milk", "Matcha", "Lavender"]);
-      }, 1000);
-  });
-};
-
-const fetchTitle = async () => {
-  return new Promise((resolve) => {
-      setTimeout(() => {
-          resolve("Custom Ingredient Title");
-      }, 500);
-  });
 };
 
 const popupOverlayStyles = {
@@ -128,7 +188,7 @@ const editableTitleStyles = {
 
 const dropdownStyles = {
   width: "100%",
-  marginTop: "20px",
+  marginTop: "9px",
   padding: "12px",
   borderRadius: "6px",
   border: "1px solid #ddd",
@@ -146,22 +206,6 @@ const iconStyles = {
   height: "27px",
 };
 
-const ingredientListStyles = {
-  marginTop: "10px",
-  textAlign: "left",
-  display: "flex",
-  flexDirection: "column",
-  gap: "5px",
-};
-
-const ingredientItemStyles = {
-  backgroundColor: "#F5F1F1",
-  padding: "10px",
-  borderRadius: "6px",
-  fontSize: "16px",
-  fontFamily: "Futura",
-  color: "gray"
-};
 
 const buttonContainerStyles = {
   marginTop: "20px",
@@ -178,5 +222,28 @@ const saveButtonStyles = {
   cursor: "pointer",
   fontSize: "16px",
 };
+
+const labelStyles = {
+  color: "black",
+  fontFamily: "Futura, sans-serif",
+  fontSize: "16px",
+  textAlign: "left",
+  marginBottom: "5px",
+  marginTop: "15px",
+  display: "block",
+};
+
+const clearDropdownStyles = {
+  width: "100%",
+  padding: "8px",
+  marginTop: "5px",
+  marginBottom: "10px",
+  borderRadius: "6px",
+  border: "1px solid transparent",
+  backgroundColor: "#F5F1F1",
+  fontFamily: "Futura, sans-serif",
+  fontSize: "16px",
+};
+
 
 export default AddNewRecipe;

@@ -1,42 +1,60 @@
 import React, { useState, useEffect } from "react";
 
-const AddIngredientPopup = ({ visible, onSave, onClose, fetchIngredients, recipeTitle }) => {
+const AddIngredientPopup = ({ visible, onSave, onClose, recipeTitle, currentIngredients }) => {
   const [category, setCategory] = useState("");
   const [type, setType] = useState("");
   const [quantity, setQuantity] = useState("");
-  const [ingredients, setIngredients] = useState([]);
   const [title, setTitle] = useState("Add Ingredient");
-
+  const [categoryToIngredients, setCategoryToIngredients] = useState({});
+  
+  // Hardcoded category-to-unit mappings
   const categoryToUnit = {
-    Milk: "ounces",
-    Syrup: "teaspoons",
-    Powder: "grams",
-    Puree: "cups",
-  };
-
-  const categoryToTypes = {
-    Milk: ["Oat", "Almond", "Whole"],
-    Syrup: ["Lavender", "Vanilla", "Hazelnut"],
-    Powder: ["Sugar", "Matcha", "Cocoa"],
-    Puree: ["Taro", "Passion Fruit"],
+    "Liquids": "oz",
+    "Ingredients": "grams",
+    "Syrups": "grams",
+    "Bottled Drinks": "bottle",
+    "Other": "units", // Assuming this is for fresh fruit
   };
 
   useEffect(() => {
     if (visible) {
-      fetchIngredients().then((data) => setIngredients(data));
-      //Use the passed recipeTitle prop from AddNewRecipe. need to implement will save to database as actual title when save is pressed
-      setTitle(recipeTitle || "Add Ingredient"); //The default title if none is passed
+      setTitle(recipeTitle || "Add Ingredient");
+  
+      fetch("http://127.0.0.1:5000/api/category-to-ingredients")
+        .then((res) => res.json())
+        .then((data) => {
+          console.log("Fetched category to ingredients map:", data);
+          setCategoryToIngredients(data); 
+        })
+        .catch((err) => console.error("Error fetching ingredients:", err));
     }
-  }, [visible, fetchIngredients, recipeTitle]);
+  }, [visible, recipeTitle]);
 
   const handleSave = () => {
     if (!category || !type || !quantity) return;
-    onSave({ category, type, quantity, unit: categoryToUnit[category] });
+
+    const newIngredient = {
+      category,
+      type,
+      quantity,
+      unit: categoryToUnit[category], // Get unit from the hardcoded category-to-unit map
+    };
+
+    // Add the new ingredient to the current list of ingredients
+    const updatedIngredients = [...currentIngredients, newIngredient];
+    onSave(newIngredient); // Pass the updated list back to the parent component
+
     setCategory("");
     setType("");
     setQuantity("");
     onClose();
   };
+
+  const handleCategoryChange = (e) => {
+    const selectedCategory = e.target.value;
+    setCategory(selectedCategory);
+    console.log("Category selected:", selectedCategory);
+  };  
 
   if (!visible) return null;
 
@@ -46,18 +64,27 @@ const AddIngredientPopup = ({ visible, onSave, onClose, fetchIngredients, recipe
         <h2 style={headerStyles}>{title}</h2>
 
         <label style={labelStyles}>Category</label>
-        <select value={category} onChange={(e) => setCategory(e.target.value)} style={clearDropdownStyles}>
+        <select value={category} onChange={handleCategoryChange} style={clearDropdownStyles}>
           <option value="">Select Category</option>
           {Object.keys(categoryToUnit).map((cat) => (
-            <option key={cat} value={cat}>{cat}</option>
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
           ))}
         </select>
 
         <label style={labelStyles}>Type</label>
-        <select value={type} onChange={(e) => setType(e.target.value)} style={clearDropdownStyles} disabled={!category}>
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value)}
+          style={clearDropdownStyles}
+          disabled={!category}
+        >
           <option value="">Select Type</option>
-          {categoryToTypes[category]?.map((item) => (
-            <option key={item} value={item}>{item}</option>
+          {category && categoryToIngredients[category]?.map((item) => (
+            <option key={item} value={item}>
+              {item}
+            </option>
           ))}
         </select>
 
@@ -74,16 +101,18 @@ const AddIngredientPopup = ({ visible, onSave, onClose, fetchIngredients, recipe
         </div>
 
         <div style={buttonContainerStyles}>
-          <button onClick={handleSave} style={saveButtonStyles}>Save</button>
-          <button onClick={onClose} style={cancelButtonStyles}>Cancel</button>
+          <button onClick={handleSave} style={saveButtonStyles}>
+            Save
+          </button>
+          <button onClick={onClose} style={cancelButtonStyles}>
+            Cancel
+          </button>
         </div>
       </div>
     </div>
   );
 };
 
-
-// Styles
 const popupOverlayStyles = {
   position: "fixed",
   top: 0,
@@ -100,96 +129,71 @@ const popupInnerStyles = {
   backgroundColor: "white",
   padding: "25px",
   borderRadius: "12px",
-  width: "400px", 
+  width: "400px",
   boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
   textAlign: "center",
 };
 
 const headerStyles = {
-  fontFamily: "Futura",  
+  fontFamily: "Futura",
   fontSize: "24px",
   fontWeight: "bold",
   marginBottom: "20px",
   textAlign: "left",
-  color: "black"
+  color: "black",
 };
 
 const labelStyles = {
   color: "black",
-  fontFamily: "Futura, sans-serif",  
+  fontFamily: "Futura, sans-serif",
   fontSize: "16px",
   textAlign: "left",
-  marginBottom: "5px",  //reduce space between label and input
-  marginTop: "15px",  //space above labels
-  display: "block",  
+  marginBottom: "5px",
+  marginTop: "15px",
+  display: "block",
 };
 
 const clearDropdownStyles = {
   width: "100%",
   padding: "8px",
-  marginTop: "5px",  
+  marginTop: "5px",
   marginBottom: "10px",
   borderRadius: "6px",
-  border: "1px solid transparent",  //Remove the border!!
-  backgroundColor: "#F5F1F1", 
-  fontFamily: "Futura, sans-serif", 
-  fontSize: "16px",  
+  border: "1px solid transparent",
+  backgroundColor: "#F5F1F1",
+  fontFamily: "Futura, sans-serif",
+  fontSize: "16px",
 };
 
 const inputStyles = {
   width: "100%",
-  paddingTop: "10px",  
-  paddingRight: "8px", 
-  paddingBottom: "10px",  
-  paddingLeft: "20px", 
+  paddingTop: "10px",
+  paddingRight: "8px",
+  paddingBottom: "10px",
+  paddingLeft: "20px",
   marginTop: "10px",
   marginBottom: "10px",
   borderRadius: "5px",
-  border: "1px solid transparent",  //transparent border
-  backgroundColor: "#F5F1F1", 
-  fontFamily: "Futura, sans-serif",  
-  fontSize: "16px"
+  border: "1px solid transparent",
+  backgroundColor: "#F5F1F1",
+  fontFamily: "Futura, sans-serif",
+  fontSize: "16px",
 };
 
 const quantityInputContainerStyles = {
   display: "flex",
   alignItems: "center",
   width: "100%",
-  position: "relative",  //UNIT inside the container
-  border: "transparent"
+  position: "relative",
 };
 
 const unitStyles = {
   marginLeft: "5px",
-  color: "black",  
-  fontSize: "14px", 
-  fontFamily: "Futura, sans-serif", 
-  position: "absolute",
-  right: "10px", 
-};
-
-const ingredientListContainerStyles = {
-  marginTop: "20px",
-  textAlign: "left",
-};
-
-const ingredientListStyles = {
-  listStyleType: "none",
-  padding: "0",
-  fontFamily: "Futura, sans-serif",
+  color: "black",
   fontSize: "14px",
-  color: "gray",
-};
-
-const ingredientItemStyles = {
-  marginBottom: "5px",
-};
-
-const noIngredientsTextStyles = {
-  fontFamily: "Futura, sans-serif", 
-  fontSize: "14px", 
-  color: "gray",  
-  textAlign: "left", 
+  fontFamily: "Futura, sans-serif",
+  position: "absolute",
+  right: "10px",
 };
 
 const buttonContainerStyles = {
@@ -206,7 +210,7 @@ const saveButtonStyles = {
   border: "none",
   cursor: "pointer",
   fontSize: "16px",
-  marginRight: "10px",  //space between Save and Cancel buttons
+  marginRight: "10px",
 };
 
 const cancelButtonStyles = {
@@ -220,6 +224,7 @@ const cancelButtonStyles = {
 };
 
 export default AddIngredientPopup;
+
 
 
 
