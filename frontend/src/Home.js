@@ -15,9 +15,10 @@ const Home = () => {
       const fetchNotifications = async () => {
         // Check if we already fetched notifications today
         const today = new Date().toDateString();
+        const lastFetchDate = localStorage.getItem('lastNotificationFetchDate');
         
         // If we've already fetched today and have data, don't fetch again
-        if (lastDate === today && currNotifications.length > 1) {
+        if (lastFetchDate === today && currNotifications.length > 1) {
           return;
         }
         
@@ -40,6 +41,8 @@ const Home = () => {
           
           if (extractedWarnings.length > 0) {
             setCurrNotifications(extractedWarnings);
+            localStorage.setItem('cachedNotifications', JSON.stringify(extractedWarnings));
+            localStorage.setItem('lastNotificationFetchDate', today);
           }
           
           // Update the last fetch date
