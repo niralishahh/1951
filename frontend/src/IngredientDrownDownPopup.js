@@ -9,8 +9,8 @@ const AddIngredientPopup = ({ visible, onSave, onClose, recipeTitle, currentIngr
   
   // Hardcoded category-to-unit mappings
   const categoryToUnit = {
-    "Liquids": "oz",
-    "Ingredients": "grams",
+    "Liquid Ingredients": "oz",
+    "Dry Ingredients": "grams",
     "Syrups": "grams",
     "Bottled Drinks": "bottle",
     "Other": "units", // Assuming this is for fresh fruit
@@ -71,14 +71,14 @@ const AddIngredientPopup = ({ visible, onSave, onClose, recipeTitle, currentIngr
           ))}
         </select>
 
-        <label style={labelStyles}>Type</label>
+        <label style={labelStyles}>Item</label>
         <select
           value={type}
           onChange={(e) => setType(e.target.value)}
           style={clearDropdownStyles}
           disabled={!category}
         >
-          <option value="">Select Type</option>
+          <option value="">Select Item</option>
           {category && categoryToIngredients[category]?.map((item) => (
             <option key={item} value={item}>
               {item}

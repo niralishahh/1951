@@ -21,8 +21,8 @@ const AddNewRecipe = ({ visible, onClose }) => {
 
     // Map for category to unit
     const categoryToUnit = {
-      "Liquids": "oz",
-      "Ingredients": "grams",
+      "Liquid Ingredients": "oz",
+      "Dry Ingredients": "grams",
       "Syrups": "grams",
       "Bottled Drinks": "bottle",
       "Other": "units", 
