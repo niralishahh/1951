@@ -17,9 +17,11 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start:react": "react-scripts start", 
-    "start:api": "cross-env FLASK_APP=../alerts.py FLASK_ENV=development flask run --port 5000", 
-    "start": "concurrently \"npm run start:react\" \"npm run start:api\"", 
+    "start:react": "react-scripts start",
+    "start:api": "cd ../backend && cross-env FLASK_APP=alerts.py FLASK_ENV=development flask run --port 5000",
+    
+    "start": "concurrently --kill-others --names \"FRONTEND,BACKEND\" \"npm run start:react\" \"npm run start:api\"",
+    
     "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
