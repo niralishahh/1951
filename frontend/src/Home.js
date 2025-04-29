@@ -6,76 +6,127 @@ import { Link, NavLink } from "react-router-dom";
 var lastDate;
 
 const Home = () => {
-  const [currNotifications, setCurrNotifications] = useState([""]);
-  const [allNotifications, setAllNotifications] = useState(currNotifications);
-  const [loading, setLoading] = useState(false)
+  const getInitialNotifications = () => {
+    const today = new Date().toDateString();
+    const lastFetchDate = localStorage.getItem('lastNotificationFetchDate');
+    const cachedNotificationsRaw = localStorage.getItem('cachedNotifications');
 
-    // Fetch notifications once daily, try to cache if possible
-    useEffect(() => {
-      const fetchNotifications = async () => {
-        // Check if we already fetched notifications today
-        const today = new Date().toDateString();
-        const lastFetchDate = localStorage.getItem('lastNotificationFetchDate');
-        
-        // If we've already fetched today and have data, don't fetch again
-        if (lastFetchDate === today && currNotifications.length > 1) {
-          return;
+    if (lastFetchDate === today && cachedNotificationsRaw) {
+      try {
+        const cachedNotifications = JSON.parse(cachedNotificationsRaw);
+        // Return cached data only if it's a non-empty array
+        return Array.isArray(cachedNotifications) && cachedNotifications.length > 0 ? cachedNotifications : [""];
+      } catch (e) {
+        console.error("Failed to parse initial cached notifications:", e);
+        return [""]; // Default if cache is corrupt
+      }
+    }
+    return [""]; // Default initial state if no valid cache for today
+  };
+
+  const [currNotifications, setCurrNotifications] = useState(getInitialNotifications);
+  const [loading, setLoading] = useState(false); // Added loading state
+
+  // Fetch notifications once daily, using cache if possible
+  useEffect(() => {
+    const loadAndFetchNotifications = async () => {
+      const today = new Date().toDateString();
+      const lastFetchDate = localStorage.getItem('lastNotificationFetchDate');
+      const cachedNotificationsRaw = localStorage.getItem('cachedNotifications');
+
+      // Check if we already have valid data for today (either from initial state or previous load)
+      if (lastFetchDate === today && cachedNotificationsRaw) {
+         try {
+            // Double check cache isn't just the initial empty string array [""]
+            const cachedData = JSON.parse(cachedNotificationsRaw);
+            if (Array.isArray(cachedData) && cachedData.length > 0) {
+               console.log("Using cached notifications for today.");
+               // Ensure state reflects cache if initial load missed it for some reason
+               if (JSON.stringify(currNotifications) !== cachedNotificationsRaw) {
+                 setCurrNotifications(cachedData);
+               }
+               return; // No need to fetch
+            }
+         } catch (e) {
+            console.error("Error reading cache check:", e);
+            // Proceed to fetch if cache is invalid
+         }
+      }
+
+      // If we reach here, it's a new day or the cache was invalid/empty. Time to fetch.
+      console.log("Fetching new notifications...");
+      setLoading(true);
+      try {
+        // Use the endpoint that also triggers the daily check on the backend
+        const response = await fetch('http://127.0.0.1:5000/api/notifications');
+        if (!response.ok) {
+           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
-        var topFew = 0;
-        try {
-          const response = await fetch('http://127.0.0.1:5000/api/updatenotifications');
-          const data = await response.json();
-          let extractedWarnings = [];
-          
-          if (Array.isArray(data)) {
-            // Process each MongoDB document
-            data.forEach(doc => {
-              // Check if doc has warnings array
-              if (topFew < 7 && doc && doc.warnings && Array.isArray(doc.warnings)) {
-                extractedWarnings.push(doc.warnings[1]);
-                topFew++;
+        const data = await response.json();
+        let extractedWarnings = [];
+        let topFew = 0; // Counter for limiting notifications
+
+        if (Array.isArray(data)) {
+          // Process newest entries first (assuming backend sorts newest first)
+          data.forEach(doc => {
+            // Get the abridged warning (assuming it's the second element)
+            if (topFew < 7 && doc && doc.warnings && Array.isArray(doc.warnings) && doc.warnings.length > 1) {
+              extractedWarnings.push(doc.warnings[1]);
+              topFew++;
+            }
+          });
+        }
+
+        // Use extracted warnings if found, otherwise maybe set to empty or a 'no notifications' message
+        const notificationsToSet = extractedWarnings.length > 0 ? extractedWarnings : []; // Use empty array if no warnings
+
+        setCurrNotifications(notificationsToSet);
+        localStorage.setItem('cachedNotifications', JSON.stringify(notificationsToSet)); // Cache the result (even if empty)
+        localStorage.setItem('lastNotificationFetchDate', today); // Update the fetch date
+        console.log("Notifications fetched and cached.");
+
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
+        // Optional: Try to load from cache as a fallback even if fetch fails, if cache exists
+        if (cachedNotificationsRaw) {
+           try {
+              const cachedNotifications = JSON.parse(cachedNotificationsRaw);
+              if (Array.isArray(cachedNotifications)) { // Check if it's an array before setting
+                 setCurrNotifications(cachedNotifications);
+                 console.log("Loaded stale notifications from cache due to fetch error.");
               }
-            });
-          }
-          
-          if (extractedWarnings.length > 0) {
-            setCurrNotifications(extractedWarnings);
-            localStorage.setItem('cachedNotifications', JSON.stringify(extractedWarnings));
-            localStorage.setItem('lastNotificationFetchDate', today);
-          }
-          
-          // Update the last fetch date
-          lastDate = today;
-          
-          // Store in localStorage for persistence across sessions
-          localStorage.setItem('lastNotificationFetchDate', today);
-          localStorage.setItem('cachedNotifications', JSON.stringify(extractedWarnings));
-        } catch (err) {
-          console.error("Error fetching notifications:", err);
-          
-          // Try to load from cache if available
-          const cachedNotifications = JSON.parse(localStorage.getItem('cachedNotifications') || '[]');
-          if (cachedNotifications.length > 0) {
-            setCurrNotifications(cachedNotifications);
-          }
+           } catch (e) {
+              console.error("Failed to parse cached notifications during error fallback:", e);
+               setCurrNotifications([]); // Set to empty on cache parse error during fallback
+           }
+        } else {
+           setCurrNotifications([]); // Set to empty if fetch fails and no cache exists
         }
-      };
-    
-      // Set up a daily check
-      fetchNotifications();
-      
-      // Check once a day (set timer to check every hour if date has changed)
-      const intervalId = setInterval(() => {
-        const today = new Date().toDateString();
-        if (lastDate !== today) {
-          fetchNotifications();
-        }
-      }, 43200000); // Check every 12 hours (43200000 ms)
-      
-      // Clean up interval on component unmount
-      return () => clearInterval(intervalId);
-    }, []); // Still empty dependency array since we manage updates manually
+      } finally {
+        setLoading(false); // Ensure loading is set to false
+      }
+    };
+
+    // Run the check/fetch logic when the component mounts
+    loadAndFetchNotifications();
+
+    // Set up an interval to re-check if the day has changed while the app is open
+    // This handles the case where the user leaves the app open past midnight
+    const intervalId = setInterval(() => {
+      const today = new Date().toDateString();
+      const lastFetchDate = localStorage.getItem('lastNotificationFetchDate');
+      if (lastFetchDate !== today) {
+        console.log("Date changed while app open, fetching new notifications.");
+        loadAndFetchNotifications(); // Re-run the fetch logic if the date has changed
+      }
+    }, 60 * 60 * 1000); // Check every hour (3600000 ms)
+
+    // Clean up the interval when the component unmounts
+    return () => clearInterval(intervalId);
+
+  }, []); // ---> Empty dependency array is CORRECT <---
+          // This ensures the setup (initial check/fetch + interval setup) runs ONLY ONCE when the component mounts.
+          // The logic *inside* the effect determines whether to actually fetch based on the date comparison.
 
   return (
     <div>
