@@ -2,6 +2,11 @@ import React, { useState, useEffect } from "react";
 import { Nav, Button } from 'react-bootstrap';
 import logo from './Screenshot 2025-04-15 at 7.01.33 PM.png';
 import { Link, NavLink } from "react-router-dom";
+import './App.css';
+import RecipesMain from "./RecipesMain";
+import AddAmazonOrders from "./AddAmazonOrders"; 
+
+
 
 var lastDate;
 
@@ -26,6 +31,9 @@ const Home = () => {
 
   const [currNotifications, setCurrNotifications] = useState(getInitialNotifications);
   const [loading, setLoading] = useState(false); // Added loading state
+  const [showRecipesMain, setShowRecipesMain] = useState(false);
+  const [showAddAmazonOrders, setShowAddAmazonOrders] = useState(false);   
+
 
   // Fetch notifications once daily, using cache if possible
   useEffect(() => {
@@ -150,8 +158,41 @@ const Home = () => {
         </Nav.Item>
         </Nav>
       </div>
-      
-      <div style={{display: "flex", padding: "20px", justifyContent: "space-evenly"}}>
+     
+      {/*<div style={{display: "flex", padding: "20px", justifyContent: "space-evenly"}}> */}
+      <div>
+        <header className="App-header">
+        <Button style={styles} variant="dark">Update Amazon History ⊕</Button>
+        <Button style={styles} variant="dark">View Data Tables ⊕</Button>
+        <Button style={styles} variant="dark">Amazon Price Tracking Tool ⊕</Button>
+        <Button style={styles} variant="dark">Cut+Dry Price Tracking Tool ⊕</Button>
+
+
+          {showRecipesMain ? (
+            <RecipesMain onClose={() => setShowRecipesMain(false)} />
+          ) : (
+            showAddAmazonOrders ? (
+              <AddAmazonOrders onClose={() => setShowAddAmazonOrders(false)} />
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowRecipesMain(true)}
+                  className="App-button"
+                >
+                  Open Recipe Manager
+                </button>
+                <button
+                  onClick={() => setShowAddAmazonOrders(true)}
+                  className="App-button"
+                >
+                  Update Amazon History
+                </button>
+              </>
+            )
+          )}
+        </header>
+        
+         {/* 
         <Button style={styles} variant="dark">Update Order History ⊕</Button>
         <Button style={styles} variant="dark">View Data Table ⊕</Button>
         <Button style={styles} variant="dark">Price Tracking Tool ⊕</Button>
@@ -164,6 +205,7 @@ const Home = () => {
           textAlign: "left",
           marginLeft: "20px"
         }}>
+        */}
           <h2 style={{padding: "10px 20px", margin: 0}}>Notifications ({currNotifications.length})</h2>
           
           <div style={{borderTop: "1px solid #dee2e6"}}>
@@ -206,7 +248,6 @@ const Home = () => {
           </div>
         </div>
       </div>
-    </div>
   );
 };
 
