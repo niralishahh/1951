@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Nav, Button } from 'react-bootstrap';
-import logo from './Screenshot 2025-04-15 at 7.01.33 PM.png';
+import logo from './logo1951.png';
 import { Link, NavLink } from "react-router-dom";
 
 var lastDate;
@@ -88,7 +88,7 @@ const Notifications = () => {
         padding: "10px 20px",
         borderBottom: "1px solid #dee2e6"
       }}>
-        <img src={logo} width="120" height="60" />
+        <img src={logo} width="120" height="70" />
         <Nav activeKey="/Notifications.js">
             <Nav.Item>
                 <NavLink to="/Home.js" className="nav-link">Home</NavLink>

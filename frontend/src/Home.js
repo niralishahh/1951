@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Nav, Button } from 'react-bootstrap';
-import logo from './Screenshot 2025-04-15 at 7.01.33 PM.png';
+import { Nav, Button } from 'react-bootstrap'; // Use Button consistently
+import logo from './logo1951.png';
 import { Link, NavLink } from "react-router-dom";
 import './App.css';
 import RecipesMain from "./RecipesMain";
-import AddAmazonOrders from "./AddAmazonOrders"; 
+import AddAmazonOrders from "./AddAmazonOrders";
 
-
-
-var lastDate;
+// Removed 'var lastDate;' as it didn't seem to be used
 
 const Home = () => {
   const getInitialNotifications = () => {
@@ -19,125 +17,127 @@ const Home = () => {
     if (lastFetchDate === today && cachedNotificationsRaw) {
       try {
         const cachedNotifications = JSON.parse(cachedNotificationsRaw);
-        // Return cached data only if it's a non-empty array
-        return Array.isArray(cachedNotifications) && cachedNotifications.length > 0 ? cachedNotifications : [""];
+        return Array.isArray(cachedNotifications) && cachedNotifications.length > 0 ? cachedNotifications : []; // Return empty array if cache is empty string array
       } catch (e) {
         console.error("Failed to parse initial cached notifications:", e);
-        return [""]; // Default if cache is corrupt
+        return []; // Default if cache is corrupt or empty
       }
     }
-    return [""]; // Default initial state if no valid cache for today
+    return []; // Default initial state if no valid cache for today
   };
 
   const [currNotifications, setCurrNotifications] = useState(getInitialNotifications);
-  const [loading, setLoading] = useState(false); // Added loading state
+  const [loading, setLoading] = useState(false);
   const [showRecipesMain, setShowRecipesMain] = useState(false);
-  const [showAddAmazonOrders, setShowAddAmazonOrders] = useState(false);   
+  const [showAddAmazonOrders, setShowAddAmazonOrders] = useState(false);
 
-
-  // Fetch notifications once daily, using cache if possible
+  // Fetch notifications logic remains the same...
   useEffect(() => {
     const loadAndFetchNotifications = async () => {
       const today = new Date().toDateString();
       const lastFetchDate = localStorage.getItem('lastNotificationFetchDate');
       const cachedNotificationsRaw = localStorage.getItem('cachedNotifications');
 
-      // Check if we already have valid data for today (either from initial state or previous load)
       if (lastFetchDate === today && cachedNotificationsRaw) {
          try {
-            // Double check cache isn't just the initial empty string array [""]
             const cachedData = JSON.parse(cachedNotificationsRaw);
-            if (Array.isArray(cachedData) && cachedData.length > 0) {
+            // Check if cache is valid array (could be empty)
+            if (Array.isArray(cachedData)) {
                console.log("Using cached notifications for today.");
-               // Ensure state reflects cache if initial load missed it for some reason
+               // Update state only if necessary
                if (JSON.stringify(currNotifications) !== cachedNotificationsRaw) {
                  setCurrNotifications(cachedData);
                }
-               return; // No need to fetch
+               return;
             }
          } catch (e) {
             console.error("Error reading cache check:", e);
-            // Proceed to fetch if cache is invalid
          }
       }
 
-      // If we reach here, it's a new day or the cache was invalid/empty. Time to fetch.
       console.log("Fetching new notifications...");
       setLoading(true);
       try {
-        // Use the endpoint that also triggers the daily check on the backend
         const response = await fetch('http://127.0.0.1:5000/api/notifications');
         if (!response.ok) {
            throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
         let extractedWarnings = [];
-        let topFew = 0; // Counter for limiting notifications
+        let topFew = 0;
 
         if (Array.isArray(data)) {
-          // Process newest entries first (assuming backend sorts newest first)
           data.forEach(doc => {
-            // Get the abridged warning (assuming it's the second element)
-            if (topFew < 7 && doc && doc.warnings && Array.isArray(doc.warnings) && doc.warnings.length > 1) {
+            if (topFew < 7 && doc?.warnings?.length > 1) { // Use optional chaining
               extractedWarnings.push(doc.warnings[1]);
               topFew++;
             }
           });
         }
 
-        // Use extracted warnings if found, otherwise maybe set to empty or a 'no notifications' message
-        const notificationsToSet = extractedWarnings.length > 0 ? extractedWarnings : []; // Use empty array if no warnings
-
+        const notificationsToSet = extractedWarnings.length > 0 ? extractedWarnings : [];
         setCurrNotifications(notificationsToSet);
-        localStorage.setItem('cachedNotifications', JSON.stringify(notificationsToSet)); // Cache the result (even if empty)
-        localStorage.setItem('lastNotificationFetchDate', today); // Update the fetch date
+        localStorage.setItem('cachedNotifications', JSON.stringify(notificationsToSet));
+        localStorage.setItem('lastNotificationFetchDate', today);
         console.log("Notifications fetched and cached.");
 
       } catch (err) {
         console.error("Error fetching notifications:", err);
-        // Optional: Try to load from cache as a fallback even if fetch fails, if cache exists
         if (cachedNotificationsRaw) {
            try {
               const cachedNotifications = JSON.parse(cachedNotificationsRaw);
-              if (Array.isArray(cachedNotifications)) { // Check if it's an array before setting
+              if (Array.isArray(cachedNotifications)) {
                  setCurrNotifications(cachedNotifications);
                  console.log("Loaded stale notifications from cache due to fetch error.");
+              } else {
+                 setCurrNotifications([]); // Ensure it's an array
               }
            } catch (e) {
               console.error("Failed to parse cached notifications during error fallback:", e);
-               setCurrNotifications([]); // Set to empty on cache parse error during fallback
+               setCurrNotifications([]);
            }
         } else {
-           setCurrNotifications([]); // Set to empty if fetch fails and no cache exists
+           setCurrNotifications([]);
         }
       } finally {
-        setLoading(false); // Ensure loading is set to false
+        setLoading(false);
       }
     };
 
-    // Run the check/fetch logic when the component mounts
     loadAndFetchNotifications();
 
-    // Set up an interval to re-check if the day has changed while the app is open
-    // This handles the case where the user leaves the app open past midnight
     const intervalId = setInterval(() => {
       const today = new Date().toDateString();
       const lastFetchDate = localStorage.getItem('lastNotificationFetchDate');
       if (lastFetchDate !== today) {
         console.log("Date changed while app open, fetching new notifications.");
-        loadAndFetchNotifications(); // Re-run the fetch logic if the date has changed
+        loadAndFetchNotifications();
       }
-    }, 60 * 60 * 1000); // Check every hour (3600000 ms)
+    }, 60 * 60 * 1000);
 
-    // Clean up the interval when the component unmounts
     return () => clearInterval(intervalId);
 
-  }, []); // ---> Empty dependency array is CORRECT <---
-          // This ensures the setup (initial check/fetch + interval setup) runs ONLY ONCE when the component mounts.
-          // The logic *inside* the effect determines whether to actually fetch based on the date comparison.
+  }, []); // Keep empty dependency array
+
+  // Define button styles (can be moved outside component if static)
+  const buttonStyles = {
+    // width: "auto", // Auto width allows wrapping
+    padding: "10px 15px",
+    borderRadius: "10px",
+    fontSize: "16px", // Slightly smaller font size?
+    textAlign: "center",
+    cursor: "pointer",
+    fontFamily: "Futura, sans-serif", // Keep Futura if desired
+    // Let variant handle color/background
+    // Removed margins, using gap now
+    flexGrow: 0, // Don't grow
+    flexShrink: 0 // Don't shrink
+  };
+
 
   return (
     <div>
+      {/* Navbar - Unchanged */}
       <div style={{
         display: "flex",
         justifyContent: "space-between",
@@ -145,124 +145,101 @@ const Home = () => {
         padding: "10px 20px",
         borderBottom: "1px solid #dee2e6"
       }}>
-        <img src={logo} width="120" height="60" />
-        <Nav activeKey="/Home.js">
-        <Nav.Item>
-            <NavLink to="/Home.js" className="nav-link">Home</NavLink>
-        </Nav.Item>
-        <Nav.Item>
-          <NavLink to="/Inventory" className="nav-link">Inventory</NavLink>
-        </Nav.Item>
-        <Nav.Item>
-          <NavLink to="/Recipe" className="nav-link">Recipe</NavLink>
-        </Nav.Item>
+        <img src={logo} style={{ height: "50px", width: "auto" }} alt="1951 Coffee Company Logo"/>
+        <Nav>
+           {/* Using NavLink with className function for active state (assuming react-router-dom v6+) */}
+           <Nav.Item>
+              <NavLink to="/Home.js" className={({ isActive }) => isActive ? "nav-link active-link" : "nav-link"}>Home</NavLink>
+           </Nav.Item>
+           <Nav.Item>
+              <NavLink to="/Inventory" className={({ isActive }) => isActive ? "nav-link active-link" : "nav-link"}>Inventory</NavLink>
+           </Nav.Item>
+           <Nav.Item>
+              <NavLink to="/RecipesMain.js" className={({ isActive }) => isActive ? "nav-link active-link" : "nav-link"}>Recipe</NavLink>
+           </Nav.Item>
         </Nav>
       </div>
-     
-      {/*<div style={{display: "flex", padding: "20px", justifyContent: "space-evenly"}}> */}
-      <div>
-        <header className="App-header">
-        <Button style={styles} variant="dark">Update Amazon History ⊕</Button>
-        <Button style={styles} variant="dark">View Data Tables ⊕</Button>
-        <Button style={styles} variant="dark">Amazon Price Tracking Tool ⊕</Button>
-        <Button style={styles} variant="dark">Cut+Dry Price Tracking Tool ⊕</Button>
+      <div style={{ display: 'flex', padding: '20px', gap: '20px' }}>
 
-
-          {showRecipesMain ? (
-            <RecipesMain onClose={() => setShowRecipesMain(false)} />
-          ) : (
-            showAddAmazonOrders ? (
-              <AddAmazonOrders onClose={() => setShowAddAmazonOrders(false)} />
-            ) : (
-              <>
-                <button
-                  onClick={() => setShowRecipesMain(true)}
-                  className="App-button"
-                >
-                  Open Recipe Manager
-                </button>
-                <button
-                  onClick={() => setShowAddAmazonOrders(true)}
-                  className="App-button"
-                >
-                  Update Amazon History
-                </button>
-              </>
-            )
-          )}
-        </header>
-        
-         {/* 
-        <Button style={styles} variant="dark">Update Order History ⊕</Button>
-        <Button style={styles} variant="dark">View Data Table ⊕</Button>
-        <Button style={styles} variant="dark">Price Tracking Tool ⊕</Button>
-        
         <div style={{
-          flex: "1 1 400px",
+           flex: '1', // Adjust flex ratio if needed (e.g., flex: 2 for wider)
+           display: 'flex',
+           flexWrap: 'wrap', // Allows buttons to wrap to new lines
+           gap: '10px', // Spacing between buttons horizontally and vertically
+           alignContent: 'flex-start' // Start placing items from the top-left
+         }}>
+          <Button style={buttonStyles} variant="dark">Update Amazon History ⊕</Button>
+          <Button style={buttonStyles} variant="dark">View Data Tables ⊕</Button>
+          <Button style={buttonStyles} variant="dark">Amazon Price Tracking Tool ⊕</Button>
+          <Button style={buttonStyles} variant="dark">Cut+Dry Price Tracking Tool ⊕</Button>
+          {showAddAmazonOrders ? (
+             <div style={{width: '100%'}}><AddAmazonOrders onClose={() => setShowAddAmazonOrders(false)} /></div>
+          ) : (
+               <Button
+                 style={buttonStyles} // Use consistent style object
+                 variant="secondary" // Example: different variant for these?
+                 onClick={() => setShowAddAmazonOrders(true)}
+                 // Removed className="App-button"
+               >
+                 Update Amazon History {/* Note: Duplicate text with first button */}
+               </Button>
+          )}
+        </div>
+        <div style={{
+          flex: '1', // Adjust flex ratio if needed (e.g., flex: 1.5 for narrower)
           border: "1px solid #d3d3d3",
           borderRadius: "10px",
-          overflow: "hidden",
-          textAlign: "left",
-          marginLeft: "20px"
+          overflow: "hidden", // Prevents content spillover
+          display: 'flex', // Use flex column for vertical layout inside
+          flexDirection: 'column'
         }}>
-        */}
-          <h2 style={{padding: "10px 20px", margin: 0}}>Notifications ({currNotifications.length})</h2>
-          
-          <div style={{borderTop: "1px solid #dee2e6"}}>
-            <div style={{padding: "10px 20px", backgroundColor: "#f8f9fa"}}>Today</div>
-            
-            {currNotifications.map((notification, index) => (
-              <div key={index} style={{
-                borderTop: "1px solid #dee2e6",
-                padding: "15px 20px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center"
-              }}>
-                <span>{notification}</span>
-              </div>
-            ))}
-            
-            <div style={{
-              borderTop: "1px solid #dee2e6",
-              padding: "15px 20px",
-              display: "flex",
-              justifyContent: "space-between"
-            }}>
-              {/* <span style={{color: "#0d6efd", display: "flex", alignItems: "center"}}>
-                <span style={{color: "#0d6efd", marginRight: "5px"}}>✓✓</span>
-                Mark All As Read
-                </span> */}
-              <Link to="/Notifications.js">
-              <Button style={{
-                backgroundColor: "#0d6efd",
-                color: "white",
-                border: "none",
-                borderRadius: "20px",
-                padding: "8px 15px"
-              }}>
+          <h2 style={{
+             padding: "10px 20px",
+             margin: 0,
+             borderBottom: "1px solid #dee2e6", // Use consistent border color
+             flexShrink: 0 // Prevent header from shrinking
+             }}>
+             Notifications ({loading ? 'Checking...' : currNotifications.length})
+          </h2>
+          <div style={{
+             flexGrow: 1, // Allow this area to grow and fill space
+             overflowY: 'auto', // Add scrollbar if content exceeds height
+             borderBottom: "1px solid #dee2e6" // Border above footer
+             }}>
+              <div style={{padding: "10px 20px", backgroundColor: "#f8f9fa", borderTop: "1px solid #dee2e6"}}>Today</div>
+
+              {loading && currNotifications.length === 0 && // Show loading indicator only if list is empty
+                 <div style={{padding: "15px 20px"}}>Loading notifications...</div>
+              }
+              {!loading && currNotifications.length === 0 && // Show 'no notifications' message
+                 <div style={{padding: "15px 20px"}}>No new notifications.</div>
+              }
+              {currNotifications.map((notification, index) => (
+                 <div key={index} style={{
+                   borderTop: "1px solid #dee2e6",
+                   padding: "15px 20px",
+                 }}>
+                   {/* Handle potential empty strings in notifications */}
+                   <span>{notification || "* Notification text missing *"}</span>
+                 </div>
+               ))}
+          </div>
+          <div style={{
+            padding: "10px 20px",
+            display: "flex",
+            justifyContent: "flex-start", 
+            flexShrink: 0 
+          }}>
+            <Link to="/Notifications.js">
+              <Button variant="primary" size="sm">
                 View All Notifications
               </Button>
-              </Link>
-            </div>
+            </Link>
           </div>
         </div>
       </div>
+    </div>
   );
-};
-
-const styles = {
-  width: "auto",
-  height: "40%",
-  padding: "10px 15px",
-  marginRight: "10px",
-  borderRadius: "10px",
-  fontSize: "18px",
-  textAlign: "center",
-  cursor: "pointer",
-  fontFamily: "Futura, sans-serif",
-  color: "white",
-  transition: "background-color 0.3s ease"
 };
 
 export default Home;

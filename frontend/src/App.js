@@ -2,6 +2,7 @@ import './App.css';
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from './Home';
 import Notifications from './Notifications';
+import HomePage from "./RecipesMain";
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 function App() {
@@ -15,6 +16,7 @@ function App() {
         <Route path="/Notifications.js" element={<Notifications />} />
         {/* <Route path="/Inventory" element={<Inventory />} />
         <Route path="/Recipe" element={<Recipe />} /> */}
+        <Route path="/RecipesMain.js" element={<HomePage/>}/>
       </Routes>
     </Router>
   );
