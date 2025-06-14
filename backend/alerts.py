@@ -33,6 +33,7 @@ def dailyWarningCheck():
     warnings = [] # reset from old ingredient warnings
     # gather data each time
     inventory_col = list(db.inventory.find())
+    order_price_col = list(db['order-price'].find())
     #print('got here')
     # # maybe store timestamps for 
     # warningTimeStamps = {}
@@ -43,14 +44,14 @@ def dailyWarningCheck():
         # orderDate = inventory_col[-1]
         # daysOrderLasts = prevWeeklyOrder#/avgDailyUsage
         # check 1) 5 days since last order 2) 
-    for item in inventory_col:
+    for item in order_price_col:
         #print('got here')
-        currItemString = f"{item['ingredient']} {item['category']}"
+        currItemString = f"{item['product name']} from {item['source']}"
         field_names = list(item.keys())
-        target_fields = field_names[4:]
+        target_fields = field_names[6:]
         # order history?
         # might be item[tf][0] soon if db change
-        orderHistory = [item[tf] for tf in target_fields]
+        orderHistory = [item[tf][0] for tf in target_fields if isinstance(item[tf], list) and len(item[tf]) >= 1]
         avgOrder = sum(orderHistory)/len(orderHistory)
         mostRecentOrderDate = field_names[-1]
         #actualDate = datetime.strptime(mostRecentOrderDate, "%m%d%Y")
