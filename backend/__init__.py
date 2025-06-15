@@ -9,6 +9,7 @@ from bson.objectid import ObjectId
 from datetime import datetime
 import traceback
 
+
 # load uri from .env
 load_dotenv()
 mongo_uri = os.getenv("URI")
@@ -19,11 +20,11 @@ client = MongoClient(mongo_uri)
 db = client['1951Data']
 
 #define collections
-ingredientsCollection = db['ingredients'] # Keep if used elsewhere
-recipesCollection = db['recipes'] # Keep if used elsewhere
-inventoryCollection = db['inventory'] # Keep if used elsewhere
-ordersCollection = db['orders'] # Keep if used elsewhere, otherwise remove
-order_pricesCollection = db['order-price'] # Correct collection name here!
+ingredientsCollection = db['ingredients'] 
+recipesCollection = db['recipes'] 
+inventoryCollection = db['inventory'] 
+ordersCollection = db['orders']
+order_pricesCollection = db['order-price'] 
 
 print("Collections in DB:", db.list_collection_names())
 print("Databases in MongoDB:", client.list_database_names())
@@ -37,7 +38,7 @@ except Exception as e:
     print(f"DB connection failed: {e}")
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"]) # Allow CORS so React can access Flask
+CORS(app, origins=["http://localhost:3000"]) 
 
 @app.route('/')
 def home():
@@ -45,27 +46,27 @@ def home():
 
 @app.route("/api/test-ingredients")
 def test_ingredients():
-    test_ingredient = ingredientsCollection.find_one()  # Fetch one ingredient
-    print("Fetched test ingredient:", test_ingredient)  # Debugging print
+    test_ingredient = ingredientsCollection.find_one()  
+    print("Fetched test ingredient:", test_ingredient)  
     return jsonify(test_ingredient)
 
 @app.route("/api/category-to-ingredients")
 def get_ingredients():
-    print("Checking ingredients...")  # Debug line
+    print("Checking ingredients...") 
     all_ingredients = list(ingredientsCollection.find())
-    print(f"Fetched from DB: {all_ingredients}")  # Debug line to check the raw data
+    print(f"Fetched from DB: {all_ingredients}")  
     if not all_ingredients:
-        print("No ingredients found in the database.")  # Debug line
+        print("No ingredients found in the database.")  
     category_map = {}
     for doc in all_ingredients:
-        print(f"Document from DB: {doc}")  # Debug line to see each document
+        print(f"Document from DB: {doc}")  
         category = doc.get("category")
         ingredient = doc.get("ingredient")
-        print(f"Processing ingredient: {ingredient} with category: {category}")  # Debug line
+        print(f"Processing ingredient: {ingredient} with category: {category}") 
         if category:
             category_map.setdefault(category, []).append(ingredient)
 
-    print(f"Category map: {category_map}")  # Debug line to see the final result
+    print(f"Category map: {category_map}") 
     return jsonify(category_map)
 
 # Endpoint to fetch items from order-price with source="Amazon"
@@ -236,19 +237,95 @@ def handle_recipes():
 
     elif request.method == "GET":
         tag = request.args.get("tags")
-        print(f"Received tag for GET request: {tag}")  # 👈 Debugging print
+        print(f"Received tag for GET request: {tag}") 
 
         if not tag:
             return jsonify({"error": "Tag is required"}), 400
 
         recipes = list(recipesCollection.find({"tags": tag}))
-        print(f"Found recipes for tag '{tag}':", recipes)  # 👈 Debugging print
+        print(f"Found recipes for tag '{tag}':", recipes)  
 
         for recipe in recipes:
             recipe["_id"] = str(recipe["_id"])
 
         return jsonify(recipes), 200
 
+@app.route("/api/recipes/<recipe_id>", methods=["GET"])
+def get_recipe_by_id(recipe_id):
+    try:
+        recipe = recipesCollection.find_one({"_id": ObjectId(recipe_id)})
+        if not recipe:
+            return jsonify({"error": "Recipe not found"}), 404
 
+        # Convert ObjectId to string
+        recipe["_id"] = str(recipe["_id"])
+        return jsonify(recipe), 200
+    except Exception as e:
+        print(f"Error fetching recipe by ID: {e}")
+        traceback.print_exc()
+        return jsonify({"error": "Failed to fetch recipe", "details": str(e)}), 500
+
+
+@app.route('/recipes', methods=['POST'])
+def add_recipe():
+    data = request.get_json()
+    result = recipesCollection.insert_one(data)
+    return jsonify({'id': str(result.inserted_id)})
+
+@app.route('/recipes/<id>', methods=['PUT'])
+def edit_recipe(id):
+    data = request.get_json()
+    result = recipesCollection.update_one({"_id": ObjectId(id)}, {"$set": data})
+    return jsonify({"message": "Recipe Updated"})
+
+@app.route('/recipes/<id>', methods=['DELETE'])
+def delete_recipe(id):
+    result = recipesCollection.delete_one({'_id': ObjectId(id)})
+    return jsonify({'message': 'Recipe Deleted'})
+
+@app.route("/api/recipes", methods=["PUT"])
+def update_recipe():
+    recipe_data = request.get_json()
+    
+  
+    recipe_id = recipe_data['id'] 
+    recipe = db.get_recipe_by_id(recipe_id) 
+    if recipe:
+        updated_recipe = db.update_recipe(recipe_id, recipe_data) 
+        return jsonify(updated_recipe), 200
+    else:
+        return jsonify({"error": "Recipe not found"}), 404
+
+from flask import abort
+
+@app.route("/api/recipes/<recipe_id>/ingredients/<int:ingredient_index>", methods=["DELETE"])
+def delete_ingredient_by_index(recipe_id, ingredient_index):
+    try:
+        recipe = recipesCollection.find_one({"_id": ObjectId(recipe_id)})
+        if not recipe:
+            return jsonify({"error": "Recipe not found"}), 404
+
+        ingredients = recipe.get("ingredients", [])
+
+        print(f"Recipe ID: {recipe_id} has {len(ingredients)} ingredients.")
+        print(f"Requested ingredient index to delete: {ingredient_index}")
+
+
+        if ingredient_index < 0 or ingredient_index >= len(ingredients):
+    return jsonify({
+        "error": "Ingredient index out of range",
+        "ingredient_index": ingredient_index,
+        "ingredients_length": len(ingredients)
+    }), 400
+
+        ingredients.pop(ingredient_index)
+        recipesCollection.update_one({"_id": ObjectId(recipe_id)}, {"$set": {"ingredients": ingredients}})
+
+        return jsonify({"message": "Ingredient deleted successfully"}), 200
+    except Exception as e:
+        print(f"Error deleting ingredient: {e}")
+        traceback.print_exc()
+        return jsonify({"error": "Failed to delete ingredient", "details": str(e)}), 500
+    
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

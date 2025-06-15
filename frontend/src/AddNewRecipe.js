@@ -55,8 +55,8 @@ const AddNewRecipe = ({ visible, onClose }) => {
         console.log("Saved Recipe:", recipeData);
         setRecipeTitle("");
         setIngredients([]);
-        setSelectedLabel("");  // Reset the label
-        onClose(true);  // Pass true to reset the form and close
+        setSelectedLabel("");  
+        onClose(true);  
       } else {
         console.error("Failed to save recipe");
       }
@@ -73,7 +73,7 @@ const AddNewRecipe = ({ visible, onClose }) => {
     setRecipeTitle("");
     setIngredients([]);
     setSelectedLabel("");
-    onClose(false);  //close and reset
+    onClose(false); 
   };
 
   if (!visible) return null;
