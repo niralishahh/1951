@@ -30,6 +30,7 @@ def initialize_app():
     ingredientsCollection = db['ingredients']
     recipesCollection = db['recipes']
     inventoryCollection = db['inventory']
+    orderpriceCollection = db['orderprice']
     
     from.routes import initialize_routes
     
