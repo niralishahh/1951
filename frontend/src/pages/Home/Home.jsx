@@ -1,34 +1,60 @@
-import React from 'react';
+import React, { useState } from 'react';
 
-function Home() {
+export default function GraphCreationUI() {
+  const [category, setCategory] = useState('Milk');
+  const [types, setTypes] = useState(['Milk']);
+  const [quantity, setQuantity] = useState(12);
+  const [showPriceChanges, setShowPriceChanges] = useState(false);
+  const [showOrderHistory, setShowOrderHistory] = useState(false);
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">
-            Welcome to Recipe Management System
-          </h1>
-          <p className="text-xl text-gray-600 mb-8">
-            Manage your recipes, inventory, and meal planning all in one place.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-12">
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Recipes</h2>
-              <p className="text-gray-600">Create, edit, and manage your favorite recipes.</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Inventory</h2>
-              <p className="text-gray-600">Track your ingredients and manage stock levels.</p>
-            </div>
-            <div className="bg-white p-6 rounded-lg shadow-md">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Planning</h2>
-              <p className="text-gray-600">Plan meals and get alerts for low inventory.</p>
-            </div>
+    <div className="min-h-screen bg-white p-6 font-sans">
+      {/* Checkboxes */}
+      <div className="flex space-x-10 mb-6">
+        <label className="flex items-center space-x-2">
+          <input type="checkbox" checked={showPriceChanges} onChange={() => setShowPriceChanges(!showPriceChanges)} />
+          <span className="text-lg font-medium">Price Changes</span>
+        </label>
+        <label className="flex items-center space-x-2">
+          <input type="checkbox" checked={showOrderHistory} onChange={() => setShowOrderHistory(!showOrderHistory)} />
+          <span className="text-lg font-medium">Order History</span>
+        </label>
+      </div>
+
+      {/* Input Controls */}
+      <div className="grid grid-cols-3 gap-8 mb-8">
+        <div>
+          <label className="block mb-2 font-semibold text-lg">Ingredient Category:</label>
+          <select value={category} onChange={e => setCategory(e.target.value)} className="w-full border rounded-md p-2 bg-gray-100">
+            <option value="Milk">Milk</option>
+            <option value="Syrup">Syrup</option>
+            <option value="Beans">Beans</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-2 font-semibold text-lg">Ingredient Type:</label>
+          <select value={types[0]} onChange={e => setTypes([e.target.value])} className="w-full border rounded-md p-2 bg-gray-100">
+            <option value="Milk">Milk</option>
+            <option value="Almond Milk">Almond Milk</option>
+            <option value="Oat Milk">Oat Milk</option>
+          </select>
+        </div>
+
+        <div>
+          <label className="block mb-2 font-semibold text-lg">Order Quantity: — units</label>
+          <div className="flex items-center space-x-2">
+            <input type="number" value={quantity} onChange={e => setQuantity(e.target.value)} className="flex-1 border rounded-md p-2 bg-gray-100" />
+            <span className="text-lg">oz</span>
           </div>
         </div>
+      </div>
+
+      {/* Placeholder Graphs */}
+      <div className="grid grid-cols-2 gap-8">
+        <div className="bg-gray-100 h-80 rounded-lg" />
+        <div className="bg-gray-100 h-80 rounded-lg" />
       </div>
     </div>
   );
 }
-
-export default Home; 
