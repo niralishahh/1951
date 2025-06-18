@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import logo from '../assets/images/image_7__1_-removebg-preview 1.png';
+import { Link } from 'react-router-dom';
+
 
 export default function Header() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -41,19 +43,19 @@ export default function Header() {
                 <div className={`lg:hidden ${isMobileMenuOpen ? 'block' : 'hidden'}`} id="mobile-menu-2">
                     <ul className="flex flex-col mt-4 font-medium border-t border-gray-200 pt-4">
                         <li>
-                            <a href="#" className="block py-2 pr-4 pl-3 text-white rounded bg-primary-700" aria-current="page">Home</a>
+                            <Link to="/" className="block py-2 pr-4 pl-3 text-white rounded bg-primary-700" aria-current="page">Home</Link>
                         </li>
                         <li>
-                            <a href="#" className="block py-2 pr-4 pl-3 text-black border-b border-gray-100 hover:bg-gray-50">Home</a>
+                            <Link to="/" className="block py-2 pr-4 pl-3 text-black border-b border-gray-100 hover:bg-gray-50">Home</Link>
                         </li>
                         <li>
                             <a href="#" className="block py-2 pr-4 pl-3 text-black border-b border-gray-100 hover:bg-gray-50">Inventory</a>
                         </li>
                         <li>
-                            <a href="#" className="block py-2 pr-4 pl-3 text-black border-b border-gray-100 hover:bg-gray-50">Recipes</a>
+                            <Link to="/recipes" className="block py-2 pr-4 pl-3 text-black border-b border-gray-100 hover:bg-gray-50">Recipes</Link>
                         </li>
                         <li>
-                            <a href="#" className="block py-2 pr-4 pl-3 text-black border-b border-gray-100 hover:bg-gray-50">Notifications</a>
+                            <Link to="/recipes-main" className="block py-2 pr-4 pl-3 text-black border-b border-gray-100 hover:bg-gray-50">Notifications</Link>
                         </li>
                         <li>
                             <a href="#" className="block py-2 pr-4 pl-3 text-black border-b border-gray-100 hover:bg-gray-50">Settings</a>
@@ -65,19 +67,19 @@ export default function Header() {
                 <div className="hidden lg:flex justify-center items-center absolute top-1/2 left-[48%] transform -translate-x-1/2 -translate-y-1/2">
                     <ul className="flex font-medium space-x-8">
                         <li>
-                            <a href="#" className="text-white rounded bg-primary-700 lg:bg-transparent lg:text-primary-700 lg:p-0" aria-current="page">Home</a>
+                            <Link to="/" className="text-white rounded bg-primary-700 lg:bg-transparent lg:text-primary-700 lg:p-0" aria-current="page">Home</Link>
                         </li>
                         <li>
-                            <a href="#" className="text-black hover:bg-gray-50 lg:hover:bg-transparent lg:hover:text-primary-700 lg:p-0">Home</a>
+                            <Link to="/" className="text-black hover:bg-gray-50 lg:hover:bg-transparent lg:hover:text-primary-700 lg:p-0">Home</Link>
                         </li>
                         <li>
                             <a href="#" className="text-black hover:bg-gray-50 lg:hover:bg-transparent lg:hover:text-primary-700 lg:p-0">Inventory</a>
                         </li>
                         <li>
-                            <a href="#" className="text-black hover:bg-gray-50 lg:hover:bg-transparent lg:hover:text-primary-700 lg:p-0">Recipes</a>
+                            <Link to="/recipes" className="text-black hover:bg-gray-50 lg:hover:bg-transparent lg:hover:text-primary-700 lg:p-0">Recipes</Link>
                         </li>
                         <li>
-                            <a href="#" className="text-black hover:bg-gray-50 lg:hover:bg-transparent lg:hover:text-primary-700 lg:p-0">Notifications</a>
+                            <Link to="/recipes-main" className="text-black hover:bg-gray-50 lg:hover:bg-transparent lg:hover:text-primary-700 lg:p-0">Notifications</Link>
                         </li>
                         <li>
                             <a href="#" className="text-black hover:bg-gray-50 lg:hover:bg-transparent lg:hover:text-primary-700 lg:p-0">Settings</a>
